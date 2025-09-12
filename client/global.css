@@ -1,0 +1,231 @@
+/** @import must precede all other statements */
+@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+
+  :root {
+    --background: 45 24% 88%;
+    --foreground: 220 14% 20%;
+    --cream: 45 24% 88%;
+    --dark: 220 14% 20%;
+    --red: 0 66% 53%;
+
+    --card: 45 24% 88%;
+    --card-foreground: 220 14% 20%;
+
+    --popover: 45 24% 88%;
+    --popover-foreground: 220 14% 20%;
+
+    --primary: 220 14% 20%;
+    --primary-foreground: 45 24% 88%;
+
+    --secondary: 45 24% 88%;
+    --secondary-foreground: 220 14% 20%;
+
+    --muted: 45 10% 85%;
+    --muted-foreground: 220 10% 40%;
+
+    --accent: 0 66% 53%;
+    --accent-foreground: 45 24% 88%;
+
+    --destructive: 0 66% 53%;
+    --destructive-foreground: 45 24% 88%;
+
+    --border: 220 14% 20%;
+    --input: 220 14% 20%;
+    --ring: 220 14% 20%;
+
+    --radius: 0.3125rem;
+  }
+
+  .dark {
+    --background: 220 14% 20%;
+    --foreground: 45 24% 88%;
+
+    --card: 220 14% 20%;
+    --card-foreground: 45 24% 88%;
+
+    --popover: 220 14% 20%;
+    --popover-foreground: 45 24% 88%;
+
+    --primary: 45 24% 88%;
+    --primary-foreground: 220 14% 20%;
+
+    --secondary: 220 14% 20%;
+    --secondary-foreground: 45 24% 88%;
+
+    --muted: 220 10% 25%;
+    --muted-foreground: 45 10% 65%;
+
+    --accent: 0 66% 53%;
+    --accent-foreground: 45 24% 88%;
+
+    --destructive: 0 66% 53%;
+    --destructive-foreground: 45 24% 88%;
+
+    --border: 45 24% 88%;
+    --input: 45 24% 88%;
+    --ring: 45 24% 88%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-cream text-dark font-montreal antialiased;
+    font-feature-settings: "liga" 1, "kern" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Custom font utilities */
+  .font-title {
+    font-family: 'Bebas Neue', sans-serif;
+    text-transform: uppercase;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+  }
+
+  .font-copy {
+    font-family: 'Inter', sans-serif;
+  }
+
+  .font-grand {
+    font-family: 'Bebas Neue', sans-serif;
+  }
+
+  .font-montreal {
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* Typography */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-title;
+  }
+
+  /* Custom animations */
+  .animate-marquee {
+    animation: marquee 40s linear infinite;
+    will-change: transform;
+  }
+
+  @keyframes marquee {
+    0% {
+      transform: translateX(0%);
+    }
+    100% {
+      transform: translateX(-25%);
+    }
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Custom button styles */
+  .btn-outline {
+    @apply border-2 border-cream text-cream uppercase font-semibold px-8 py-3 rounded-md transition-all duration-300 hover:bg-cream hover:text-dark;
+  }
+
+  .btn-outline-dark {
+    @apply border-2 border-dark text-dark uppercase font-semibold px-8 py-3 rounded-md transition-all duration-300 hover:bg-dark hover:text-cream;
+  }
+
+  /* Mix blend mode for overlays */
+  .mix-difference {
+    mix-blend-mode: difference;
+  }
+
+  /* Grid system helpers */
+  .grid-container {
+    display: grid;
+    grid-template-columns: repeat(24, 1fr);
+    gap: 0.7vw;
+    width: 100%;
+    padding: 0 0.7vw;
+  }
+
+  /* Responsive text clamp sizes */
+  .text-responsive-sm {
+    font-size: clamp(14px, 1.25vw, 26px);
+  }
+
+  .text-responsive-md {
+    font-size: clamp(20px, 1.666vw, 46px);
+  }
+
+  .text-responsive-lg {
+    font-size: clamp(28px, 2.5vw, 64px);
+  }
+
+  .text-responsive-xl {
+    font-size: clamp(40px, 5.555vw, 100px);
+  }
+
+  .text-responsive-2xl {
+    font-size: clamp(50px, 8.333vw, 180px);
+  }
+
+  .text-responsive-3xl {
+    font-size: clamp(70px, 12.5vw, 300px);
+  }
+
+  .text-responsive-4xl {
+    font-size: clamp(80px, 16.666vw, 400px);
+  }
+
+  /* Noise overlay effect */
+  .noise-overlay::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.03;
+    z-index: 1;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  }
+
+  /* Loading states */
+  .skeleton {
+    @apply animate-pulse bg-muted;
+  }
+
+  /* Aspect ratios */
+  .aspect-video-16-9 {
+    aspect-ratio: 16 / 9;
+  }
+
+  /* Transitions */
+  .transition-smooth {
+    transition: all 550ms cubic-bezier(0.165, 0.84, 0.44, 1);
+  }
+
+  /* Animation delays */
+  .animation-delay-200 {
+    animation-delay: 200ms;
+  }
+
+  .animation-delay-400 {
+    animation-delay: 400ms;
+  }
+
+  .animation-delay-600 {
+    animation-delay: 600ms;
+  }
+
+  .animation-delay-800 {
+    animation-delay: 800ms;
+  }
+}
