@@ -45,7 +45,7 @@ export const Navigation: React.FC = () => {
             <Link
               key={link.path}
               to={link.path}
-              className={`font-copy uppercase text-sm font-semibold tracking-wider transition-all duration-300 ${
+              className={`font-copy uppercase text-lg font-extrabold tracking-wider transition-all duration-300 ${
                 location.pathname === link.path
                   ? 'text-red'
                   : 'text-cream hover:text-red'
@@ -78,7 +78,7 @@ export const Navigation: React.FC = () => {
               key={link.path}
               to={link.path}
               onClick={() => setIsMenuOpen(false)}
-              className={`font-copy uppercase text-lg font-semibold tracking-wider transition-all duration-300 ${
+              className={`font-copy uppercase text-xl font-extrabold tracking-wider transition-all duration-300 ${
                 location.pathname === link.path
                   ? 'text-red'
                   : 'text-cream hover:text-red'
