@@ -149,15 +149,28 @@ export default function Index() {
               </span>
             </h1>
 
-            <div className="mt-12 md:mt-20 animate-fadeIn animation-delay-800">
-              <span className="font-title text-f-180 md:text-f-240 text-dark leading-[0.85em] tracking-tighter inline-block transform hover:scale-105 transition-transform duration-300">
-                BOLD
-              </span>
-            </div>
-
             {/* Decorative elements */}
             <div className="absolute right-[5vw] top-1/2 -translate-y-1/2 w-[20vw] h-[20vw] bg-red rounded-full opacity-15 blur-3xl animate-pulse" />
             <div className="absolute left-[5vw] top-1/3 w-[15vw] h-[15vw] bg-dark rounded-full opacity-5 blur-3xl" />
+
+            {/* Narwhal SVG Background - Right */}
+            <div className="absolute right-[10%] top-1/2 -translate-y-1/2 opacity-[0.15] animate-fadeIn animation-delay-600 hover:opacity-[0.25] transition-opacity duration-700">
+              <svg
+                className="w-[35vw] h-[35vw] max-w-[450px] max-h-[450px] text-dark animate-spin-slow"
+                viewBox="0 0 100 100"
+                fill="currentColor"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <g transform="scale(-1, 1) translate(-100, 0)">
+                  <path
+                    fill="currentColor"
+                    stroke="currentColor"
+                    strokeWidth="0.5"
+                    d="M30.66,38.84c-1.21-0.33-1.92-1.58-1.59-2.79c0.33-1.21,1.57-1.93,2.78-1.6c1.21,0.33,1.92,1.58,1.59,2.79   C33.11,38.45,31.86,39.17,30.66,38.84z M37.5,48.78c-0.26-0.2-0.64-0.15-0.84,0.11c-0.2,0.26-0.15,0.64,0.11,0.84   c6.18,4.71,8.8,8.89,8.19,13.1c-5.46,0.65-9.78-2.04-13.19-8.19c-0.16-0.29-0.52-0.39-0.81-0.23c-0.29,0.16-0.39,0.52-0.23,0.81   c3.28,5.91,7.55,8.9,12.71,8.9c0.69,0,1.4-0.05,2.13-0.16c0.25-0.04,0.45-0.23,0.5-0.48C47.01,58.62,44.28,53.95,37.5,48.78z    M67.31,87.45H33.95c-0.33,0-0.6,0.27-0.6,0.6c0,0.33,0.27,0.6,0.6,0.6h33.37c0.33,0,0.6-0.27,0.6-0.6   C67.91,87.71,67.64,87.45,67.31,87.45z M47.75,81.04c0,0.33,0.27,0.6,0.6,0.6h15.97c0.33,0,0.6-0.27,0.6-0.6   c0-0.33-0.27-0.6-0.6-0.6H48.34C48.01,80.44,47.75,80.71,47.75,81.04z M92.56,73.23H60.55c-0.33,0-0.6,0.27-0.6,0.6   s0.27,0.6,0.6,0.6h32.02c0.33,0,0.6-0.27,0.6-0.6S92.89,73.23,92.56,73.23z M95,66.54c0,0.33-0.27,0.6-0.6,0.6H5.6   c-0.33,0-0.6-0.27-0.6-0.6c0-0.33,0.27-0.6,0.6-0.6h16.7l-7.22-9.65c-2.98-3.98-4.23-8.91-3.53-13.88c0.12-0.87,0.3-1.73,0.54-2.56   c0,0,0,0,0,0c0,0,0,0,0,0c0.14-0.48,0.29-0.96,0.47-1.43c0,0,0,0,0,0c1.11-2.99,2.97-5.64,5.43-7.72L6.7,12.27   c-0.16-0.26-0.1-0.6,0.14-0.78c0.24-0.19,0.58-0.16,0.8,0.06l15.01,15.6l1.41-1.07c3.96-2.99,8.86-4.25,13.8-3.55   c4.95,0.7,9.32,3.29,12.3,7.27l16.78,22.44c1.23,1.64,2.93,3.4,3.68,3.51c1.07,0.05,1.56-0.82,1.59-0.85   c1.24-2.35,1.76-4.39,2.19-6.03c0.33-1.28,0.61-2.35,1.13-3.14c-3.63-2.11-5.51-5.11-5.74-9.14c-0.02-0.29,0.18-0.55,0.46-0.62   c2.84-0.64,5.67,0.38,7.7,2.73c2.04-2.35,4.87-3.37,7.7-2.73c0.29,0.06,0.48,0.33,0.46,0.62c-0.23,4.03-2.12,7.03-5.75,9.14   c1.14,1.67,1.42,4.09,1.76,7.07c0.09,0.8,0.19,1.63,0.31,2.51c0,0.01,0,0.01,0,0.02c0.15,1.39,0.33,3.78,0.37,5.91   c0.04,2.59-0.14,3.96-0.38,4.72H94.4C94.73,65.94,95,66.21,95,66.54z M18.93,29.95l0.63,1.02l1.23,2.01   c1.88,0.08,2.94-0.76,3.33-2.6l-1.59-1.65l-0.83-0.87L10.58,16.32L18.93,29.95z M23.78,65.94h57.34c0.12-0.18,0.53-1.04,0.48-4.58   c-0.04-2.77-0.32-5.56-0.36-5.91c-0.12-0.89-0.21-1.72-0.31-2.52c-0.38-3.26-0.65-5.61-1.92-6.99c-0.13-0.14-0.18-0.32-0.15-0.51   c0.03-0.18,0.15-0.34,0.31-0.43c3.53-1.85,5.35-4.4,5.7-7.98c-2.42-0.35-4.81,0.74-6.46,2.97c-0.11,0.15-0.29,0.24-0.48,0.24   c-0.19,0-0.37-0.09-0.48-0.24c-1.65-2.23-4.03-3.32-6.46-2.97c0.35,3.58,2.18,6.13,5.71,7.98c0.17,0.09,0.29,0.26,0.31,0.45   c0.02,0.19-0.05,0.39-0.19,0.52c-0.62,0.57-0.9,1.66-1.3,3.18c-0.44,1.7-0.99,3.81-2.29,6.29c-0.03,0.06-0.85,1.59-2.73,1.49   c-0.01,0-0.02,0-0.04,0c-1.56-0.19-3.85-3.09-4.51-3.98L49.21,30.51c-2.79-3.73-6.88-6.15-11.51-6.81   c-4.62-0.66-9.21,0.52-12.91,3.32L23.48,28l1.71,1.77c0.13,0.13,0.19,0.32,0.16,0.51c-0.41,2.56-1.9,3.9-4.33,3.9   c-0.2,0-0.41-0.01-0.63-0.03c-0.19-0.02-0.36-0.12-0.46-0.28l-1.31-2.15c-2.44,2.1-4.17,4.76-5.15,7.65c1.77,1.76,3.26,2,5.21,0.91   c0.32-0.18,0.72-0.06,0.89,0.27s0.06,0.73-0.26,0.9c-1.04,0.57-1.97,0.81-2.81,0.81c-1.35,0-2.48-0.62-3.45-1.47c0,0,0,0,0,0   c-1.22,4.95-0.3,10.38,2.98,14.77L23.78,65.94z M52.06,73.19H24.53c-0.33,0-0.6,0.27-0.6,0.6c0,0.33,0.27,0.6,0.6,0.6h27.53   c0.33,0,0.6-0.27,0.6-0.6C52.66,73.46,52.39,73.19,52.06,73.19z M40.55,81.04c0-0.33-0.27-0.6-0.6-0.6H12.42   c-0.33,0-0.6,0.27-0.6,0.6c0,0.33,0.27,0.6,0.6,0.6h27.53C40.28,81.63,40.55,81.37,40.55,81.04z"
+                  />
+                </g>
+              </svg>
+            </div>
           </div>
         </div>
 
@@ -299,22 +312,108 @@ export default function Index() {
       </section>
 
       {/* Hit Us Up Section with Animation */}
-      <section className="py-32 bg-dark border-t-2 border-cream">
+      <section className="py-32 bg-cream border-t-2 border-dark">
         <div className="px-[0.7vw]">
-          <div className="max-w-6xl mx-auto">
-            <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
-              {/* Left side text */}
-              <div className="flex-1 text-center lg:text-left">
-                <h2 className="font-title text-f-80 md:text-f-120 text-cream mb-6">
-                  Ready to
-                </h2>
-                <h2 className="font-title text-f-80 md:text-f-120 text-red">
-                  Make Waves?
-                </h2>
+          <div className="max-w-[90vw] mx-auto">
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-16 lg:gap-24">
+              {/* Left side - 2/3 column */}
+              <div className="flex-1 lg:w-2/3">
+                <div className="flex flex-col h-full justify-between">
+                  {/* Top section with title and social */}
+                  <div className="flex flex-col md:flex-row justify-between mb-12 md:items-start">
+                    {/* Title and location */}
+                    <div className="mb-8 md:mb-0">
+                      <h2 className="font-title text-f-80 md:text-f-120 text-dark uppercase mb-4 leading-[0.85]">
+                        NARWHAL
+                      </h2>
+                      <h3 className="font-title text-f-24 md:text-f-32 text-dark uppercase">
+                        San Francisco, CA
+                      </h3>
+                    </div>
+
+                    {/* Social icons - aligned to top of NARWHAL text */}
+                    <div className="flex gap-3 md:mt-[-0.25rem]">
+                      <a
+                        href="#"
+                        className="flex items-center justify-center w-12 h-12 bg-dark rounded hover:bg-red transition-colors duration-300"
+                        aria-label="Instagram"
+                      >
+                        <Instagram className="w-6 h-6 text-cream" />
+                      </a>
+                      <a
+                        href="#"
+                        className="flex items-center justify-center w-12 h-12 bg-dark rounded hover:bg-red transition-colors duration-300"
+                        aria-label="LinkedIn"
+                      >
+                        <Linkedin className="w-6 h-6 text-cream" />
+                      </a>
+                      <a
+                        href="#"
+                        className="flex items-center justify-center w-12 h-12 bg-dark rounded hover:bg-red transition-colors duration-300"
+                        aria-label="Twitter"
+                      >
+                        <Twitter className="w-6 h-6 text-cream" />
+                      </a>
+                      <a
+                        href="#"
+                        className="flex items-center justify-center w-12 h-12 bg-dark rounded hover:bg-red transition-colors duration-300"
+                        aria-label="Email"
+                      >
+                        <Mail className="w-6 h-6 text-cream" />
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Team list */}
+                  <div>
+                    <ul className="space-y-0">
+                      <li className="flex flex-col md:flex-row justify-between py-3 border-t-2 border-b-2 border-dark">
+                        <span className="font-copy font-semibold text-sm uppercase tracking-wider text-dark">
+                          John Anderson
+                        </span>
+                        <span className="font-copy font-semibold text-sm uppercase tracking-wider text-dark">
+                          Creative Director / Managing Partner
+                        </span>
+                      </li>
+                      <li className="flex flex-col md:flex-row justify-between py-3 border-b-2 border-dark">
+                        <span className="font-copy font-semibold text-sm uppercase tracking-wider text-dark">
+                          Sarah Mitchell
+                        </span>
+                        <span className="font-copy font-semibold text-sm uppercase tracking-wider text-dark">
+                          Executive Producer
+                        </span>
+                      </li>
+                      <li className="flex flex-col md:flex-row justify-between py-3 border-b-2 border-dark">
+                        <span className="font-copy font-semibold text-sm uppercase tracking-wider text-dark">
+                          David Chen
+                        </span>
+                        <span className="font-copy font-semibold text-sm uppercase tracking-wider text-dark">
+                          Head of Strategy
+                        </span>
+                      </li>
+                      <li className="flex flex-col md:flex-row justify-between py-3 border-b-2 border-dark">
+                        <div className="flex flex-col md:flex-row gap-2 md:gap-8">
+                          <a
+                            href="mailto:hello@narwhal.studio"
+                            className="font-copy font-semibold text-sm uppercase tracking-wider text-dark hover:text-red transition-colors duration-300"
+                          >
+                            hello@narwhal.studio
+                          </a>
+                        </div>
+                        <a
+                          href="tel:415.555.0100"
+                          className="font-copy font-semibold text-sm uppercase tracking-wider text-dark hover:text-red transition-colors duration-300"
+                        >
+                          415.555.0100
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
               </div>
 
-              {/* Right side animated circle */}
-              <div className="flex-shrink-0">
+              {/* Right side animated circle - 1/3 column */}
+              <div className="flex-shrink-0 lg:w-1/3 flex justify-center lg:justify-end">
                 <a
                   href="mailto:hello@narwhal.studio"
                   className="inline-block"
@@ -333,78 +432,6 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Contact Section */}
-      <section id="contact" className="py-32 bg-cream relative">
-        <div className="px-[0.7vw]">
-          <div className="max-w-6xl mx-auto">
-            <h2 className="font-title text-f-120 text-dark mb-16">Contact</h2>
-
-            {/* Team contacts */}
-            <div className="mb-16">
-              <div className="border-t-2 border-dark">
-                {teamMembers.map((member) => (
-                  <div
-                    key={member.email}
-                    className="flex flex-col md:flex-row md:items-center justify-between py-6 border-b-2 border-dark"
-                  >
-                    <div className="mb-4 md:mb-0">
-                      <h4 className="font-title text-2xl text-dark">
-                        {member.name}
-                      </h4>
-                      <p className="font-copy text-sm uppercase tracking-wider text-dark/60">
-                        {member.role}
-                      </p>
-                    </div>
-                    <a
-                      href={`mailto:${member.email}`}
-                      className="font-copy text-dark hover:text-red transition-colors duration-300 flex items-center gap-2"
-                    >
-                      <Mail className="w-4 h-4" />
-                      {member.email}
-                    </a>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* General contact */}
-            <div className="text-center mb-16">
-              <p className="font-copy text-dark/60 mb-4">General Inquiries</p>
-              <a
-                href="mailto:hello@narwhal.studio"
-                className="font-title text-f-60 text-dark hover:text-red transition-colors duration-300"
-              >
-                hello@narwhal.studio
-              </a>
-            </div>
-
-            {/* Social links */}
-            <div className="flex justify-center gap-8">
-              <a
-                href="#"
-                className="text-dark hover:text-red transition-colors duration-300"
-                aria-label="Instagram"
-              >
-                <Instagram className="w-6 h-6" />
-              </a>
-              <a
-                href="#"
-                className="text-dark hover:text-red transition-colors duration-300"
-                aria-label="Twitter"
-              >
-                <Twitter className="w-6 h-6" />
-              </a>
-              <a
-                href="#"
-                className="text-dark hover:text-red transition-colors duration-300"
-                aria-label="LinkedIn"
-              >
-                <Linkedin className="w-6 h-6" />
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Footer */}
       <footer className="py-8 bg-dark">
