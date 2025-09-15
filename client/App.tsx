@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Navigation } from './components/Navigation';
 import Index from './pages/Index';
+import About from './pages/About';
 import NotFound from './pages/NotFound';
 import './global.css';
 
@@ -28,7 +29,7 @@ function App() {
         <Route path="/" element={<Index />} />
         <Route path="/work" element={<PlaceholderPage title="Our Work" />} />
         <Route path="/news" element={<PlaceholderPage title="Latest News" />} />
-        <Route path="/about" element={<PlaceholderPage title="About Us" />} />
+        <Route path="/about" element={<About />} />
         <Route path="/capabilities" element={<PlaceholderPage title="Our Capabilities" />} />
         <Route path="/contact" element={<PlaceholderPage title="Contact Us" />} />
         <Route path="*" element={<NotFound />} />

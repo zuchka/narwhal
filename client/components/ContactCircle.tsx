@@ -4,7 +4,7 @@ export const ContactCircle: React.FC = () => {
   return (
     <div className="relative w-[272px] h-[272px] md:w-[340px] md:h-[340px] mx-auto group cursor-pointer">
       {/* Border circle */}
-      <div className="absolute inset-0 rounded-full border-2 border-cream group-hover:border-red transition-colors duration-500" />
+      <div className="absolute inset-0 rounded-full border-2 border-dark group-hover:border-red transition-colors duration-500" />
 
       {/* Spinning text circle */}
       <div className="absolute inset-0 animate-spin-slow">
@@ -21,11 +21,18 @@ export const ContactCircle: React.FC = () => {
             />
           </defs>
           <text
-            className="fill-cream font-title text-[24px] md:text-[30px] font-bold uppercase"
+            className="font-title text-[24px] md:text-[30px] font-bold uppercase"
             style={{ letterSpacing: "0.2em", fontWeight: "700" }}
           >
             <textPath href="#circle-path" startOffset="0%" textLength="800">
-              HIT US UP • HIT US UP • HIT US UP • HIT US UP •
+              <tspan className="fill-dark">HIT US UP </tspan>
+              <tspan className="fill-red">*</tspan>
+              <tspan className="fill-dark"> HIT US UP </tspan>
+              <tspan className="fill-red">*</tspan>
+              <tspan className="fill-dark"> HIT US UP </tspan>
+              <tspan className="fill-red">*</tspan>
+              <tspan className="fill-dark"> HIT US UP </tspan>
+              <tspan className="fill-red">*</tspan>
             </textPath>
           </text>
         </svg>
@@ -33,7 +40,7 @@ export const ContactCircle: React.FC = () => {
 
       {/* Center narwhal */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="bg-dark border-2 border-cream rounded-full p-8 md:p-10 group-hover:bg-red group-hover:border-red transition-all duration-500 transform group-hover:scale-110 group-hover:rotate-6">
+        <div className="bg-dark border-2 border-dark rounded-full p-8 md:p-10 group-hover:bg-red group-hover:border-red transition-all duration-500 transform group-hover:scale-110 group-hover:rotate-6">
           {/* Narwhal SVG from Noun Project - Flipped Right */}
           <svg
             className="w-20 h-20 md:w-28 md:h-28 text-cream"
