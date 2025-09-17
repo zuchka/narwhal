@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Masonry from 'masonry-layout';
+import { Shuffle } from 'lucide-react';
 import { FilterControls, FilterOptions } from '@/components/FilterControls';
 
 // Rijksmuseum artwork interface
@@ -27,13 +28,14 @@ const Gallery: React.FC = () => {
   const [displayedArtworks, setDisplayedArtworks] = useState<Artwork[]>([]); // Currently displayed artworks
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
   const [imagesLoaded, setImagesLoaded] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Changed to false - don't load initially
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [allImagesLoaded, setAllImagesLoaded] = useState(false);
   const [currentChunk, setCurrentChunk] = useState(0);
   const [filters, setFilters] = useState<FilterOptions>({});
   const [activeFilters, setActiveFilters] = useState<FilterOptions>({});
+  const [hasTriggeredShuffle, setHasTriggeredShuffle] = useState(false); // Track if shuffle has been triggered
   const [masonrySettings] = useState({
     columns: '4',
     gutter: 10,
@@ -109,6 +111,7 @@ const Gallery: React.FC = () => {
 
   // Apply filters and fetch new artworks
   const applyFilters = () => {
+    setHasTriggeredShuffle(true); // Mark that shuffle has been triggered
     setActiveFilters(filters);
     fetchArtworks(filters);
   };
@@ -117,7 +120,12 @@ const Gallery: React.FC = () => {
   const clearFilters = () => {
     setFilters({});
     setActiveFilters({});
-    fetchArtworks({});
+    setHasTriggeredShuffle(false); // Reset shuffle state when clearing
+    setAllArtworks([]);
+    setDisplayedArtworks([]);
+    setCurrentChunk(0);
+    setImagesLoaded(new Set());
+    setError(null);
   };
 
   // Load more artworks (next chunk)
@@ -144,10 +152,6 @@ const Gallery: React.FC = () => {
     }, 100); // Small delay to prevent rapid firing
   };
 
-  useEffect(() => {
-    fetchArtworks();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
 
   // Get column width based on settings
@@ -313,7 +317,8 @@ const Gallery: React.FC = () => {
     );
   }
 
-  if (error || (displayedArtworks.length === 0 && !loading)) {
+  // Show error only if shuffle was triggered and there's an actual error
+  if (error && hasTriggeredShuffle) {
     return (
       <div className="min-h-screen bg-cream pt-[100px] pb-20">
         <div className="px-[0.7vw] mb-8">
@@ -327,16 +332,31 @@ const Gallery: React.FC = () => {
           </motion.p>
         </div>
 
+        {/* Rijksmuseum Filter Controls */}
+        <div className="px-[0.7vw] mb-8">
+          <FilterControls
+            filters={filters}
+            activeFilters={activeFilters}
+            onFiltersChange={setFilters}
+            onApply={applyFilters}
+            onClear={clearFilters}
+            loading={loading}
+          />
+        </div>
+
         <div className="flex items-center justify-center py-20">
           <div className="text-center">
             <p className="font-copy text-f-24 text-dark/60 mb-6">
-              {error || 'No artworks found'}
+              {error}
             </p>
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => {
+                setError(null);
+                setHasTriggeredShuffle(false);
+              }}
               className="btn-outline-dark"
             >
-              Reload Page
+              Try Again
             </button>
           </div>
         </div>
@@ -370,18 +390,9 @@ const Gallery: React.FC = () => {
         />
       </div>
 
-      {/* MASONRY.JS SECTION */}
-      <div className="mb-20">
-        <div className="px-[0.7vw] mb-8">
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="font-montreal text-f-18 uppercase tracking-wider text-dark/60 text-center"
-          >
-            Classic masonry layout • Click to view details
-          </motion.p>
-        </div>
+      {/* MASONRY.JS SECTION - Only show if shuffle has been triggered */}
+      {hasTriggeredShuffle && (
+        <div className="mb-20">
 
         {/* Masonry Grid Container - Full width matching navigation */}
         <div className="masonry-container" style={{
@@ -505,8 +516,25 @@ const Gallery: React.FC = () => {
             )}
           </div>
         </div>
-      </div>
+        </div>
+      )}
 
+      {/* Show empty state if no shuffle triggered yet */}
+      {!hasTriggeredShuffle && (
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <div className="mb-6">
+              <Shuffle className="w-16 h-16 text-dark/30 mx-auto mb-4" />
+            </div>
+            <p className="font-copy text-f-24 text-dark/60 mb-4 mt-[1px]">
+              Press "Shuffle Collection" to explore masterpieces
+            </p>
+            <p className="font-montreal text-sm text-dark/50 max-w-md mx-auto">
+              Customize your filters above and click shuffle to discover amazing artworks from the Rijksmuseum collection.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Lightbox Modal */}
       <AnimatePresence>
@@ -522,20 +550,20 @@ const Gallery: React.FC = () => {
               initial={{ scale: 0.9 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0.9 }}
-              className="relative max-w-7xl max-h-[90vh] w-full h-full flex items-center justify-center"
+              className="relative max-w-[95vw] max-h-[95vh] w-full h-full flex items-center justify-center"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex flex-col md:flex-row gap-6 max-h-[90vh] overflow-auto bg-cream/10 backdrop-blur-sm rounded-lg p-6">
-                <div className="flex-1 flex items-center justify-center">
+              <div className="flex flex-col lg:flex-row gap-4 max-h-[95vh] overflow-auto bg-cream/10 backdrop-blur-sm rounded-lg p-4 lg:p-6">
+                <div className="flex-1 flex items-center justify-center min-w-0">
                   <img
                     src={selectedArtwork.webImage.url}
                     alt={selectedArtwork.title}
-                    className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-2xl"
+                    className="max-w-full max-h-[85vh] lg:max-h-[88vh] object-contain rounded-lg shadow-2xl"
                   />
                 </div>
-                
+
                 {/* Artwork details panel */}
-                <div className="md:w-96 flex flex-col justify-center">
+                <div className="lg:w-80 xl:w-96 flex flex-col justify-center flex-shrink-0">
                   <div className="bg-cream/20 backdrop-blur-sm rounded-lg p-6">
                     <div className="mb-4">
                       <span className="inline-block bg-red text-cream text-xs font-copy font-semibold px-3 py-1 rounded-full uppercase tracking-wider mb-3">

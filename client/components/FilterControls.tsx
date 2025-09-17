@@ -302,45 +302,6 @@ export const FilterControls: React.FC<FilterControlsProps> = ({
         </div>
       </div>
 
-      {/* Color Palette & Top Pieces */}
-      <div className="flex flex-col lg:flex-row gap-6">
-        <div className="flex-1">
-          <Label className="text-cream/80 text-xs uppercase tracking-wider mb-3 block">
-            Color Palette
-          </Label>
-          <div className="flex flex-wrap gap-2">
-            {colorPalette.map(color => (
-              <button
-                key={color.value}
-                onClick={() => handleColorToggle(color.value)}
-                className={`
-                  w-10 h-10 rounded-full border-2 transition-all duration-200
-                  ${filters.colors?.includes(color.value) 
-                    ? 'border-cream scale-110 shadow-lg' 
-                    : 'border-cream/30 hover:border-cream/60'}
-                `}
-                style={{ backgroundColor: color.hex }}
-                title={color.label}
-              />
-            ))}
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-3 lg:ml-8">
-          <Switch
-            id="top-pieces"
-            checked={filters.topPieces || false}
-            onCheckedChange={(checked) => handleFilterChange('topPieces', checked || undefined)}
-            className="data-[state=checked]:bg-red"
-          />
-          <Label 
-            htmlFor="top-pieces" 
-            className="text-cream cursor-pointer font-montreal text-sm uppercase tracking-wider"
-          >
-            Masterpieces Only
-          </Label>
-        </div>
-      </div>
     </motion.div>
   );
 };
