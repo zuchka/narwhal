@@ -1,9 +1,6 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Masonry from 'masonry-layout';
-import 'web-animations-js';
-import ChartsSection from '@/components/ChartsSection';
-import ArtworksMuuriSection from '@/components/ArtworksMuuriSection';
 import { FilterControls, FilterOptions } from '@/components/FilterControls';
 
 // Rijksmuseum artwork interface
@@ -32,37 +29,42 @@ const Gallery: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [allImagesLoaded, setAllImagesLoaded] = useState(false);
+  const [filters, setFilters] = useState<FilterOptions>({});
   const [activeFilters, setActiveFilters] = useState<FilterOptions>({});
-  const [pendingFilters, setPendingFilters] = useState<FilterOptions>({});
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [masonrySettings] = useState({
+    columns: '4',
+    gutter: 10,
+    transitionDuration: 300,
+    itemStyle: 'bordered',
+    hoverEffect: 'scale',
+    borderRadius: 8,
+    showCaptions: true,
+    showBorders: true,
+    animateLayout: true,
+    colorScheme: 'dark',
+  });
+  const [isShuffling, setIsShuffling] = useState(false);
   const masonryGridRef = useRef<HTMLDivElement>(null);
   const masonryRef = useRef<Masonry | null>(null);
 
-  // Fetch artworks from local API endpoint
-  const fetchArtworks = async (isRefresh = false) => {
+  // Fetch artworks from local API endpoint with filters
+  const fetchArtworks = async (appliedFilters: FilterOptions = {}) => {
     try {
-      if (!isRefresh) {
-        setLoading(true);
-      } else {
-        setIsRefreshing(true);
-      }
+      setLoading(true);
       setError(null);
 
-      // Build query params from activeFilters
+      // Build query params from filters
       const params = new URLSearchParams();
-      if (activeFilters.type) params.append('type', activeFilters.type);
-      if (activeFilters.century) params.append('century', activeFilters.century);
-      if (activeFilters.material) params.append('material', activeFilters.material);
-      if (activeFilters.technique) params.append('technique', activeFilters.technique);
-      if (activeFilters.topPieces) params.append('topPieces', 'true');
-      if (activeFilters.colors && activeFilters.colors.length > 0) {
-        params.append('colors', activeFilters.colors.join(','));
+      if (appliedFilters.type) params.append('type', appliedFilters.type);
+      if (appliedFilters.century) params.append('century', appliedFilters.century);
+      if (appliedFilters.material) params.append('material', appliedFilters.material);
+      if (appliedFilters.technique) params.append('technique', appliedFilters.technique);
+      if (appliedFilters.topPieces) params.append('topPieces', 'true');
+      if (appliedFilters.colors && appliedFilters.colors.length > 0) {
+        params.append('colors', appliedFilters.colors.join(','));
       }
 
-      const queryString = params.toString();
-      const url = `/api/rijksmuseum${queryString ? `?${queryString}` : ''}`;
-
-      const response = await fetch(url);
+      const response = await fetch(`/api/rijksmuseum?${params.toString()}`);
       if (!response.ok) {
         throw new Error('Failed to fetch artworks');
       }
@@ -72,53 +74,49 @@ const Gallery: React.FC = () => {
       if (data.success && data.artworks && data.artworks.length > 0) {
         setArtworks(data.artworks);
         setError(null);
-
-        // Show a warning if results are limited
-        if (data.artworks.length < 10 && Object.keys(activeFilters).length > 0) {
-          console.warn(`Limited results (${data.artworks.length}) with current filters. Showing available artworks.`);
-        }
       } else if (!data.success && data.artworks && data.artworks.length > 0) {
         // Use fallback data if API failed but we have backup
         console.warn('Using fallback artworks data');
         setArtworks(data.artworks);
         setError(null);
-      } else if (data.artworks && data.artworks.length === 0) {
-        // No results found, but not an error - just no matches
-        console.warn('No artworks match the current filters');
-        setArtworks([]);
-        setError('No artworks found with these filters. Try adjusting your search criteria.');
       } else {
         throw new Error('Failed to load artworks');
       }
 
       setLoading(false);
-      setIsRefreshing(false);
     } catch (err) {
       console.error('Error fetching artworks:', err);
       setError('Failed to load artworks. Please try again later.');
       setLoading(false);
-      setIsRefreshing(false);
     }
   };
 
-  // Apply pending filters and trigger search
+  // Apply filters and fetch new artworks
   const applyFilters = () => {
-    setActiveFilters(pendingFilters);
+    setActiveFilters(filters);
+    fetchArtworks(filters);
   };
 
   // Clear all filters
   const clearFilters = () => {
-    setPendingFilters({});
+    setFilters({});
     setActiveFilters({});
+    fetchArtworks({});
   };
 
   useEffect(() => {
     fetchArtworks();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeFilters]);
+  }, []);
 
 
-  // Initialize Masonry.js
+  // Get column width based on settings
+  const getColumnWidth = () => {
+    // Always use sizer for auto, item selector for fixed columns
+    return masonrySettings.columns === 'auto' ? '.masonry-sizer' : '.masonry-item';
+  };
+
+  // Initialize Masonry.js with visual settings
   useLayoutEffect(() => {
     if (!masonryGridRef.current || artworks.length === 0 || !allImagesLoaded) return;
 
@@ -126,14 +124,15 @@ const Gallery: React.FC = () => {
       if (!masonryGridRef.current) return;
 
       try {
-        // Initialize Masonry
+        // Initialize Masonry with dynamic settings
         masonryRef.current = new Masonry(masonryGridRef.current, {
           itemSelector: '.masonry-item',
-          columnWidth: '.masonry-sizer',
-          percentPosition: true,
-          gutter: 0,
-          transitionDuration: '0.3s',
+          columnWidth: getColumnWidth(),
+          percentPosition: false,
+          gutter: masonrySettings.gutter,
+          transitionDuration: masonrySettings.animateLayout ? `${masonrySettings.transitionDuration}ms` : 0,
           initLayout: true,
+          horizontalOrder: true,
         });
 
         // Force a layout refresh after a short delay
@@ -161,7 +160,7 @@ const Gallery: React.FC = () => {
         masonryRef.current = null;
       }
     };
-  }, [artworks, allImagesLoaded]);
+  }, [artworks, allImagesLoaded, masonrySettings]);
 
   // Preload images and track when all are loaded
   useEffect(() => {
@@ -225,19 +224,9 @@ const Gallery: React.FC = () => {
     setSelectedArtwork(artwork);
   };
 
-  if (loading && !isRefreshing) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-cream pt-[100px] pb-20">
-        <div className="px-4 mb-8">
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="font-title text-f-120 text-dark text-center mb-4"
-          >
-            GALLERY
-          </motion.h1>
-        </div>
         <div className="flex items-center justify-center py-20">
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-dark mb-4"></div>
@@ -252,14 +241,6 @@ const Gallery: React.FC = () => {
     return (
       <div className="min-h-screen bg-cream pt-[100px] pb-20">
         <div className="px-[0.7vw] mb-8">
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="font-title text-f-120 text-dark text-center mb-4"
-          >
-            GALLERY
-          </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -270,31 +251,16 @@ const Gallery: React.FC = () => {
           </motion.p>
         </div>
 
-        {/* Filter Controls */}
-        <div className="px-[0.7vw] mb-8">
-          <FilterControls
-            filters={pendingFilters}
-            activeFilters={activeFilters}
-            onFiltersChange={setPendingFilters}
-            onApply={applyFilters}
-            onClear={clearFilters}
-            loading={isRefreshing}
-          />
-        </div>
-
         <div className="flex items-center justify-center py-20">
           <div className="text-center">
             <p className="font-copy text-f-24 text-dark/60 mb-6">
-              {error || 'No artworks found with these filters'}
-            </p>
-            <p className="font-montreal text-sm text-dark/50 mb-6 max-w-md mx-auto">
-              Try adjusting your filters or click "Clear All" to see the full collection
+              {error || 'No artworks found'}
             </p>
             <button
-              onClick={clearFilters}
+              onClick={() => window.location.reload()}
               className="btn-outline-dark"
             >
-              Clear Filters
+              Reload Page
             </button>
           </div>
         </div>
@@ -306,14 +272,6 @@ const Gallery: React.FC = () => {
     <div className="min-h-screen bg-cream pt-[100px] pb-20">
       {/* Header */}
       <div className="px-[0.7vw] mb-8">
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="font-title text-f-120 text-dark text-center mb-4"
-        >
-          GALLERY
-        </motion.h1>
         <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -324,29 +282,21 @@ const Gallery: React.FC = () => {
         </motion.p>
       </div>
 
-      {/* Filter Controls */}
+      {/* Rijksmuseum Filter Controls */}
       <div className="px-[0.7vw] mb-8">
         <FilterControls
-          filters={pendingFilters}
+          filters={filters}
           activeFilters={activeFilters}
-          onFiltersChange={setPendingFilters}
+          onFiltersChange={setFilters}
           onApply={applyFilters}
           onClear={clearFilters}
-          loading={isRefreshing}
+          loading={loading}
         />
       </div>
 
       {/* MASONRY.JS SECTION */}
       <div className="mb-20">
         <div className="px-[0.7vw] mb-8">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="font-title text-f-80 text-dark text-center mb-6"
-          >
-            RIJKSMUSEUM COLLECTION
-          </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -357,23 +307,51 @@ const Gallery: React.FC = () => {
           </motion.p>
         </div>
 
-        {/* Masonry Grid Container */}
-        <div className="masonry-container px-[0.7vw]">
+        {/* Masonry Grid Container - Full width matching navigation */}
+        <div className="masonry-container" style={{
+          paddingLeft: '0.7vw',
+          paddingRight: '0.7vw',
+          width: '100%',
+        }}>
           <div
             ref={masonryGridRef}
             className="masonry-grid"
           >
             {/* Sizer element for Masonry */}
-            <div className="masonry-sizer"></div>
+            {masonrySettings.columns === 'auto' && <div className="masonry-sizer"></div>}
 
             {artworks.map((artwork) => {
               return (
                 <div
                   key={`masonry-${artwork.id}`}
                   className="masonry-item"
+                  style={{
+                    width: masonrySettings.columns !== 'auto'
+                      ? `calc((100% - ${masonrySettings.gutter * (parseInt(masonrySettings.columns) - 1)}px) / ${parseInt(masonrySettings.columns)})`
+                      : undefined,
+                    marginBottom: `${masonrySettings.gutter}px`,
+                  }}
                 >
                   <div
-                    className="masonry-content group cursor-pointer bg-dark border-2 border-dark overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:border-red"
+                    className={`
+                      masonry-content group cursor-pointer overflow-hidden transition-all
+                      ${masonrySettings.itemStyle === 'minimal' ? '' : ''}
+                      ${masonrySettings.itemStyle === 'bordered' && masonrySettings.showBorders ? 'border-2' : ''}
+                      ${masonrySettings.itemStyle === 'shadow' ? 'shadow-lg' : ''}
+                      ${masonrySettings.itemStyle === 'glass' ? 'backdrop-blur-sm bg-white/10' : ''}
+                      ${masonrySettings.colorScheme === 'cream' ? 'bg-cream border-cream' : ''}
+                      ${masonrySettings.colorScheme === 'dark' ? 'bg-dark border-dark' : ''}
+                      ${masonrySettings.colorScheme === 'red' ? 'bg-red border-red' : ''}
+                      ${masonrySettings.colorScheme === 'gradient' ? 'bg-gradient-to-br from-dark to-red border-dark' : ''}
+                      ${masonrySettings.hoverEffect === 'scale' ? 'hover:scale-[1.02]' : ''}
+                      ${masonrySettings.hoverEffect === 'glow' ? 'hover:shadow-2xl hover:shadow-red/30' : ''}
+                      ${masonrySettings.hoverEffect === 'lift' ? 'hover:-translate-y-1 hover:shadow-xl' : ''}
+                      ${masonrySettings.itemStyle === 'bordered' && masonrySettings.showBorders ? 'hover:border-red' : ''}
+                    `}
+                    style={{
+                      borderRadius: `${masonrySettings.borderRadius}px`,
+                      transitionDuration: `${masonrySettings.transitionDuration}ms`,
+                    }}
                     onClick={() => handleImageClick(artwork)}
                   >
                     {!imagesLoaded.has(artwork.id) && (
@@ -383,10 +361,14 @@ const Gallery: React.FC = () => {
                       <img
                         src={artwork.webImage.url}
                         alt={artwork.title}
-                        className="w-full h-auto transition-transform duration-500 group-hover:scale-[1.05]"
+                        className={`
+                          w-full h-auto
+                          ${masonrySettings.hoverEffect === 'scale' ? 'transition-transform group-hover:scale-[1.05]' : ''}
+                        `}
                         style={{
                           opacity: imagesLoaded.has(artwork.id) ? 1 : 0,
-                          transition: 'opacity 0.3s ease-out',
+                          transition: `opacity 0.3s ease-out${masonrySettings.hoverEffect === 'scale' ? ', transform ' + masonrySettings.transitionDuration + 'ms' : ''}`,
+                          borderRadius: masonrySettings.showCaptions ? `${masonrySettings.borderRadius}px ${masonrySettings.borderRadius}px 0 0` : `${masonrySettings.borderRadius}px`,
                         }}
                         loading="lazy"
                       />
@@ -395,17 +377,33 @@ const Gallery: React.FC = () => {
                     </div>
 
                     {/* Artwork info card */}
-                    <div className="p-4 bg-cream border-t-2 border-dark group-hover:bg-dark group-hover:border-red transition-all duration-300">
-                      <h3 className="font-title text-sm uppercase tracking-wider text-dark mb-1 line-clamp-1 group-hover:text-cream transition-colors duration-300">
-                        {artwork.title}
-                      </h3>
-                      <p className="font-montreal text-xs font-medium text-dark/80 mb-0.5 group-hover:text-cream/90 transition-colors duration-300">
-                        {artwork.artist}
-                      </p>
-                      <p className="font-montreal text-xs font-semibold text-red group-hover:text-red transition-colors duration-300">
-                        {artwork.dating}
-                      </p>
-                    </div>
+                    {masonrySettings.showCaptions && (
+                      <div
+                        className={`
+                          p-4 transition-all
+                          ${masonrySettings.showBorders ? 'border-t-2' : ''}
+                          ${masonrySettings.colorScheme === 'cream' ? 'bg-dark text-cream border-dark group-hover:bg-cream group-hover:text-dark group-hover:border-cream' : ''}
+                          ${masonrySettings.colorScheme === 'dark' ? 'bg-dark text-cream border-dark group-hover:bg-cream group-hover:text-dark group-hover:border-cream' : ''}
+                          ${masonrySettings.colorScheme === 'red' ? 'bg-cream text-dark border-red group-hover:bg-red group-hover:text-cream' : ''}
+                          ${masonrySettings.colorScheme === 'gradient' ? 'bg-gradient-to-r from-cream to-cream/80 text-dark border-dark group-hover:from-dark group-hover:to-red group-hover:text-cream' : ''}
+                        `}
+                        style={{
+                          transitionDuration: `${masonrySettings.transitionDuration}ms`,
+                          borderBottomLeftRadius: `${masonrySettings.borderRadius}px`,
+                          borderBottomRightRadius: `${masonrySettings.borderRadius}px`,
+                        }}
+                      >
+                        <h3 className="font-title text-sm uppercase tracking-wider mb-1 line-clamp-1 transition-colors">
+                          {artwork.title}
+                        </h3>
+                        <p className="font-montreal text-xs font-medium opacity-80 mb-0.5 transition-colors">
+                          {artwork.artist}
+                        </p>
+                        <p className="font-montreal text-xs font-semibold text-red transition-colors">
+                          {artwork.dating}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -414,15 +412,6 @@ const Gallery: React.FC = () => {
         </div>
       </div>
 
-      {/* CHARTS & GRAPHS SECTION */}
-      <ChartsSection />
-
-      {/* MUURI ARTWORKS SECTION */}
-      <ArtworksMuuriSection
-        artworks={artworks.slice(0, 25)}
-        onArtworkClick={handleImageClick}
-        imagesLoaded={imagesLoaded}
-      />
 
       {/* Lightbox Modal */}
       <AnimatePresence>

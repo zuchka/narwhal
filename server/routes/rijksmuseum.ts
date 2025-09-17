@@ -18,189 +18,253 @@ export const handleRijksmuseum: RequestHandler = async (req, res) => {
     // Parse colors if provided
     const colorList = colors ? (typeof colors === 'string' ? colors.split(',') : []) : [];
 
-    // Fetch different pages to get diverse collection
-    const pages = [0, 1, 2, 3, 4, 5];
+    // Build base parameters
+    const baseParams = {
+      key: apiKey,
+      format: 'json',
+      ps: '100', // Use maximum page size of 100 items per page
+      imgonly: 'true',
+    };
+
+    // Build filter parameters function
+    const buildFilterParams = (page: number = 0) => {
+      const params = new URLSearchParams({
+        ...baseParams,
+        p: page.toString(),
+      });
+
+      // Add specific filter parameters using correct API parameter names
+      if (type && typeof type === 'string' && type !== 'all') {
+        params.append('type', type);
+      }
+
+      if (century && typeof century === 'string' && century !== 'all') {
+        // Use the correct parameter name for century filtering
+        params.append('f.dating.period', century);
+      }
+
+      if (material && typeof material === 'string' && material !== 'all') {
+        params.append('material', material);
+      }
+
+      if (technique && typeof technique === 'string' && technique !== 'all') {
+        params.append('technique', technique);
+      }
+
+      // Add top pieces filter
+      if (topPieces === 'true') {
+        params.append('toppieces', 'true');
+      }
+
+      // Add color filters if provided
+      if (colorList.length > 0) {
+        colorList.forEach(color => {
+          params.append('f.normalized32Colors.hex', color.replace('#', '%23'));
+        });
+      }
+
+      return params;
+    };
+
+    // Determine how many pages to fetch based on filters
+    const hasSpecificFilters = (type && type !== 'all') ||
+                              (material && material !== 'all') ||
+                              (technique && technique !== 'all') ||
+                              (century && century !== 'all') ||
+                              topPieces === 'true' ||
+                              colorList.length > 0;
+
     const allArtworks: any[] = [];
+    let totalAvailable = 0;
 
-    // Fetch multiple pages in parallel
-    const promises = pages.map(async (page) => {
+    // Try smart random offset approach first, but with fallback
+    let randomOffsetWorked = false;
+    
+    if (!hasSpecificFilters) {
+      // For no filters, try a conservative random offset (early pages are more likely to have content)
       try {
-        const params = new URLSearchParams({
-          key: apiKey,
-          format: 'json',
-          ps: '20', // 20 items per page
-          p: page.toString(), // page number
-          imgonly: 'true',
-        });
+        const maxSafePage = 100; // Only try pages 0-100 where content is more likely
+        const randomPage = Math.floor(Math.random() * maxSafePage);
+        const pagesToTry = [randomPage, randomPage + 1];
+        
+        console.log(`Trying conservative random offset: pages ${pagesToTry.join(', ')}`);
 
-        // Add dedicated filter parameters
-        if (type && typeof type === 'string' && type !== 'all') {
-          params.append('type', type);
-        }
+        const promises = pagesToTry.map(async (page) => {
+          try {
+            const params = buildFilterParams(page);
+            const url = `https://www.rijksmuseum.nl/api/en/collection?${params}`;
+            const response = await fetch(url);
 
-        if (century && typeof century === 'string' && century !== 'all') {
-          params.append('f.dating.period', century);
-        }
-
-        if (material && typeof material === 'string' && material !== 'all') {
-          params.append('material', material);
-        }
-
-        if (technique && typeof technique === 'string' && technique !== 'all') {
-          params.append('technique', technique);
-        }
-
-        // Add top pieces filter
-        if (topPieces === 'true') {
-          params.append('toppieces', 'true');
-        }
-
-        // Add color filters if provided
-        if (colorList.length > 0) {
-          // Rijksmuseum API uses f.normalized32Colors.hex for color filtering
-          colorList.forEach(color => {
-            params.append('f.normalized32Colors.hex', color.replace('#', '%23'));
-          });
-        }
-
-        const url = `https://www.rijksmuseum.nl/api/en/collection?${params}`;
-        const response = await fetch(url);
-
-        if (response.ok) {
-          const data = await response.json();
-          return data.artObjects || [];
-        }
-      } catch (err) {
-        console.warn(`Failed to fetch page ${page}:`, err);
-      }
-      return [];
-    });
-
-    // Wait for all requests to complete
-    const results = await Promise.all(promises);
-    results.forEach(artworks => {
-      allArtworks.push(...artworks);
-    });
-
-    // Check if any filters are active
-    const hasFilters = (type && type !== 'all') ||
-                      (century && century !== 'all') ||
-                      (material && material !== 'all') ||
-                      (technique && technique !== 'all') ||
-                      topPieces === 'true' ||
-                      colorList.length > 0;
-
-    // If filters returned few results, try a broader search
-    if (allArtworks.length < 20 && hasFilters) {
-      console.log(`Only found ${allArtworks.length} items with filters, trying broader search...`);
-
-      // Try with just type or material (remove other filters)
-      try {
-        const broadParams = new URLSearchParams({
-          key: apiKey,
-          format: 'json',
-          ps: '30',
-          imgonly: 'true',
-        });
-
-        // Only add type OR material, not both
-        if (type && typeof type === 'string' && type !== 'all') {
-          broadParams.append('type', type);
-        } else if (material && typeof material === 'string' && material !== 'all') {
-          broadParams.append('material', material);
-        }
-
-        const url = `https://www.rijksmuseum.nl/api/en/collection?${broadParams}`;
-        const response = await fetch(url);
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.artObjects) {
-            allArtworks.push(...data.artObjects);
+            if (response.ok) {
+              const data = await response.json();
+              console.log(`Page ${page}: Found ${data.count} total, returned ${data.artObjects?.length || 0} objects`);
+              
+              if (data.count > totalAvailable) {
+                totalAvailable = data.count;
+              }
+              
+              return {
+                page,
+                artObjects: data.artObjects || [],
+                totalCount: data.count || 0
+              };
+            }
+          } catch (err) {
+            console.warn(`Failed to fetch page ${page}:`, err);
           }
+          return { page, artObjects: [], totalCount: 0 };
+        });
+
+        const results = await Promise.all(promises);
+        results.forEach(result => {
+          if (result.artObjects.length > 0) {
+            allArtworks.push(...result.artObjects);
+            randomOffsetWorked = true;
+          }
+        });
+
+        if (randomOffsetWorked && allArtworks.length > 0) {
+          console.log(`✅ Random offset worked: fetched ${allArtworks.length} items`);
         }
       } catch (err) {
-        console.warn(`Failed to fetch broader search:`, err);
+        console.warn('Random offset approach failed:', err);
       }
     }
 
-    // If still not enough results, fetch some general items
-    if (allArtworks.length < 20) {
-      console.log(`Still only ${allArtworks.length} items, fetching general collection...`);
+    // Fallback to sequential pages if random offset didn't work or we have filters
+    if (!randomOffsetWorked || allArtworks.length < 20) {
+      console.log(`${randomOffsetWorked ? 'Random offset returned few results' : 'Using sequential pages'}, fetching from start...`);
+      
+      // Use sequential pages starting from 0 for reliable results
+      const pagesToFetch = hasSpecificFilters ? [0, 1, 2] : [0, 1, 2, 3, 4];
 
-      try {
-        const params = new URLSearchParams({
-          key: apiKey,
-          format: 'json',
-          ps: '50',
-          imgonly: 'true',
-          toppieces: 'true',
-        });
-
-        const url = `https://www.rijksmuseum.nl/api/en/collection?${params}`;
-        const response = await fetch(url);
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.artObjects) {
-            allArtworks.push(...data.artObjects);
-          }
-        }
-      } catch (err) {
-        console.warn(`Failed to fetch general collection:`, err);
-      }
-    }
-
-    // Only add special searches if no specific filters are set
-    if (!hasFilters) {
-      const specialSearches = [
-        { type: 'print' },
-        { type: 'sculpture' },
-        { type: 'ceramic' },
-        { material: 'silver' },
-        { material: 'glass' },
-      ];
-
-      // Fetch special categories (limited to avoid rate limiting)
-      for (let i = 0; i < 2 && i < specialSearches.length; i++) {
+      const fetchPromises = pagesToFetch.map(async (page) => {
         try {
-          const params = new URLSearchParams({
-            key: apiKey,
-            format: 'json',
-            ps: '10',
-            imgonly: 'true',
-          });
-
-          // Add the special search parameter
-          const searchItem = specialSearches[i];
-          if (searchItem.type) {
-            params.append('type', searchItem.type);
-          } else if (searchItem.material) {
-            params.append('material', searchItem.material);
-          }
-
+          const params = buildFilterParams(page);
           const url = `https://www.rijksmuseum.nl/api/en/collection?${params}`;
+          
+          console.log(`Fetching sequential page ${page} with URL: ${url}`);
           const response = await fetch(url);
 
           if (response.ok) {
             const data = await response.json();
-            if (data.artObjects) {
-              allArtworks.push(...data.artObjects);
+            
+            console.log(`Sequential page ${page}: Found ${data.count} total items, returned ${data.artObjects?.length || 0} objects`);
+            
+            if (data.count > totalAvailable) {
+              totalAvailable = data.count;
             }
+            
+            return {
+              page,
+              artObjects: data.artObjects || [],
+              totalCount: data.count || 0
+            };
+          } else {
+            console.warn(`Failed to fetch page ${page}: ${response.status} ${response.statusText}`);
+            return { page, artObjects: [], totalCount: 0 };
           }
         } catch (err) {
-          console.warn(`Failed to fetch special search:`, err);
+          console.warn(`Failed to fetch page ${page}:`, err);
+          return { page, artObjects: [], totalCount: 0 };
         }
+      });
+
+      // Wait for all sequential requests to complete
+      const results = await Promise.all(fetchPromises);
+      
+      // Clear previous results if we're doing fallback
+      if (!randomOffsetWorked) {
+        allArtworks.length = 0;
       }
+      
+      results.forEach(result => {
+        allArtworks.push(...result.artObjects);
+      });
+
+      console.log(`Sequential fetch results: fetched ${allArtworks.length} items total`);
     }
 
-    // Remove duplicates and process artworks
+    // If still no results, return fallback data
+    if (allArtworks.length === 0) {
+      console.warn('No artworks found, returning fallback data');
+      
+      return res.json({
+        success: false,
+        artworks: [
+          {
+            id: 'SK-C-5',
+            objectNumber: 'SK-C-5',
+            title: 'The Night Watch',
+            artist: 'Rembrandt van Rijn',
+            dating: '1642',
+            webImage: {
+              url: 'https://lh3.googleusercontent.com/SsEIJWka3_cYRXXSE8VD3XNOgtOxoZhqW1uB8UFj78eg8gq3G4jAqL4Z_5KwA12aD7Leqp27F653aBkYkRBkEQyeKxfaZPyDx0O8CzWg=s0',
+              width: 2500,
+              height: 2034,
+            },
+            aspectRatio: 1.23,
+            principalMaker: 'Rembrandt van Rijn',
+            materials: [],
+            techniques: [],
+            objectTypes: [],
+          },
+          {
+            id: 'SK-A-1718',
+            objectNumber: 'SK-A-1718',
+            title: 'The Milkmaid',
+            artist: 'Johannes Vermeer',
+            dating: '1658',
+            webImage: {
+              url: 'https://lh3.googleusercontent.com/cRtF3WdYfRQEraAcQz8dWDJOq3XsRX-h244rOw3r7bHFmKen6C5Pn7u8LDXJPootdqK4ZMruYYYbZDSNmROLmVxvTQ=s0',
+              width: 2031,
+              height: 2308,
+            },
+            aspectRatio: 0.88,
+            principalMaker: 'Johannes Vermeer',
+            materials: [],
+            techniques: [],
+            objectTypes: [],
+          },
+          {
+            id: 'BK-1975-81',
+            objectNumber: 'BK-1975-81',
+            title: 'Cupboard',
+            artist: 'Herman Doomer',
+            dating: '1635',
+            webImage: {
+              url: 'https://lh3.googleusercontent.com/ZYQ7IcfJ45yQOPnmhzBkZK2mc2F_e7bUMDgKaY-miSl0f8y3o-Q--H3R81q-2q1cfqFqoDlDgyLDW3OHJqin_ugnB_KRIfZaV-9xX2Y=s0',
+              width: 5958,
+              height: 6805,
+            },
+            aspectRatio: 0.88,
+            principalMaker: 'Herman Doomer',
+            materials: ['wood'],
+            techniques: ['woodworking'],
+            objectTypes: ['furniture'],
+          },
+        ],
+        error: 'API returned no results'
+      });
+    }
+
+    // Remove duplicates using object number
     const uniqueArtworks = new Map();
+    let duplicatesRemoved = 0;
+
+    console.log(`Processing ${allArtworks.length} total artworks for deduplication...`);
+
     allArtworks.forEach(obj => {
-      if (obj.webImage && obj.webImage.url && !uniqueArtworks.has(obj.objectNumber)) {
-        uniqueArtworks.set(obj.objectNumber, obj);
+      // Skip if no image or already seen this object number
+      if (!obj.webImage || !obj.webImage.url || uniqueArtworks.has(obj.objectNumber)) {
+        duplicatesRemoved++;
+        return;
       }
+
+      uniqueArtworks.set(obj.objectNumber, obj);
     });
+
+    console.log(`Removed ${duplicatesRemoved} duplicates, keeping ${uniqueArtworks.size} unique artworks`);
 
     // Process and shuffle the artworks for variety
     const processedArtworks = Array.from(uniqueArtworks.values())
@@ -237,21 +301,27 @@ export const handleRijksmuseum: RequestHandler = async (req, res) => {
     const filterInfo = activeFilters.length > 0
       ? ` with filters: ${activeFilters.join(', ')}`
       : ' (no filters)';
-    console.log(`Fetched ${processedArtworks.length} unique artworks${filterInfo}`);
+    
+    console.log(`✅ Success: ${processedArtworks.length} unique artworks${filterInfo}`);
+    console.log(`📊 Collection stats: ${totalAvailable} total available`);
 
-    // Log warning if very few results
-    if (processedArtworks.length < 10 && hasFilters) {
-      console.warn(`Limited results with filters. Consider broadening search criteria.`);
-    }
-
+    // Return success response
     res.json({
       success: true,
       artworks: processedArtworks,
+      metadata: {
+        totalFetched: processedArtworks.length,
+        totalAvailable: totalAvailable,
+        duplicatesRemoved: duplicatesRemoved,
+        filters: activeFilters,
+        strategy: randomOffsetWorked ? 'random_offset' : 'sequential'
+      }
     });
+
   } catch (error) {
     console.error('Error fetching from Rijksmuseum:', error);
     
-    // Return fallback data if API fails
+    // Return fallback data if API fails completely
     res.json({
       success: false,
       error: 'Failed to fetch from Rijksmuseum API',
@@ -285,116 +355,18 @@ export const handleRijksmuseum: RequestHandler = async (req, res) => {
           principalMaker: 'Johannes Vermeer',
         },
         {
-          id: 'SK-A-2344',
-          objectNumber: 'SK-A-2344',
-          title: 'The Threatened Swan',
-          artist: 'Jan Asselijn',
-          dating: '1650',
+          id: 'BK-1975-81',
+          objectNumber: 'BK-1975-81',
+          title: 'Cupboard',
+          artist: 'Herman Doomer',
+          dating: '1635',
           webImage: {
-            url: 'https://lh3.googleusercontent.com/PkLCLkqHhCT17OUcpyPpO0l9xk_FEwQLOTMgg7go7VtLO7nF51L8mA4Qvwm5f7cSH-15mlG4PlBqKY-qLD7Mzg=s0',
-            width: 1919,
-            height: 1558,
+            url: 'https://lh3.googleusercontent.com/ZYQ7IcfJ45yQOPnmhzBkZK2mc2F_e7bUMDgKaY-miSl0f8y3o-Q--H3R81q-2q1cfqFqoDlDgyLDW3OHJqin_ugnB_KRIfZaV-9xX2Y=s0',
+            width: 5958,
+            height: 6805,
           },
-          aspectRatio: 1.23,
-          principalMaker: 'Jan Asselijn',
-        },
-        {
-          id: 'SK-C-251',
-          objectNumber: 'SK-C-251',
-          title: 'Winter Landscape with Ice Skaters',
-          artist: 'Hendrick Avercamp',
-          dating: '1608',
-          webImage: {
-            url: 'https://lh3.googleusercontent.com/vn0FqDRPmQhZQDFhrqLs7XqGOh6lG5jHorKXyLhMG7V_JxKFDx-SV1KYryFkN8uP9S6Te0aLkdqX_kttRYYPmgvrVQ=s0',
-            width: 1919,
-            height: 768,
-          },
-          aspectRatio: 2.5,
-          principalMaker: 'Hendrick Avercamp',
-        },
-        {
-          id: 'SK-A-4',
-          objectNumber: 'SK-A-4',
-          title: 'The Jewish Bride',
-          artist: 'Rembrandt van Rijn',
-          dating: '1665',
-          webImage: {
-            url: 'https://lh3.googleusercontent.com/mAyAjvYjIeAIlByhJx1Huctgeb58y7519XYP38oL1FXarhVlcXW7kxuwayOCFdnwtOp6B6F0HJmmws-Ceo5b_pNSSQs=s0',
-            width: 2031,
-            height: 1676,
-          },
-          aspectRatio: 1.21,
-          principalMaker: 'Rembrandt van Rijn',
-        },
-        {
-          id: 'SK-A-2983',
-          objectNumber: 'SK-A-2983',
-          title: 'Still Life with Flowers in a Glass Vase',
-          artist: 'Jan Davidsz. de Heem',
-          dating: '1670',
-          webImage: {
-            url: 'https://lh3.googleusercontent.com/UWchAqKZxpYFw2cDdCRQdPNq5hTQ-jOJJDUgVCZKx8Tk1_xUHtzc_uH3kq4HU8B6IGzsoZ9_D97DBZc88PbN_w=s0',
-            width: 1558,
-            height: 1919,
-          },
-          aspectRatio: 0.81,
-          principalMaker: 'Jan Davidsz. de Heem',
-        },
-        {
-          id: 'SK-A-3981',
-          objectNumber: 'SK-A-3981',
-          title: 'Girl with a Pearl Earring',
-          artist: 'Johannes Vermeer',
-          dating: '1665',
-          webImage: {
-            url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/1665_Girl_with_a_Pearl_Earring.jpg/800px-1665_Girl_with_a_Pearl_Earring.jpg',
-            width: 800,
-            height: 921,
-          },
-          aspectRatio: 0.87,
-          principalMaker: 'Johannes Vermeer',
-        },
-        {
-          id: 'SK-A-180',
-          objectNumber: 'SK-A-180',
-          title: 'The Merry Drinker',
-          artist: 'Frans Hals',
-          dating: '1628',
-          webImage: {
-            url: 'https://lh3.googleusercontent.com/d4d6Rk8BvnLKA8QYxy7foaWSDccj8OpGUedDEvZ7xpgw7TK7iGVh5JsFH8NhHjLH5-VtnhCOWx8PZg6paBJg0g=s0',
-            width: 1676,
-            height: 2031,
-          },
-          aspectRatio: 0.83,
-          principalMaker: 'Frans Hals',
-        },
-        {
-          id: 'SK-A-1935',
-          objectNumber: 'SK-A-1935',
-          title: 'The Little Street',
-          artist: 'Johannes Vermeer',
-          dating: '1658',
-          webImage: {
-            url: 'https://lh3.googleusercontent.com/5J7UcqW5ceQlziR2f_0_Ly-xJpBttqJ6m1lrDiY3FIdYjqoG56XJFGCfKAQwBDBtVhWJGCSQuktJBxNPyJfwOQ=s0',
-            width: 1558,
-            height: 1404,
-          },
-          aspectRatio: 1.11,
-          principalMaker: 'Johannes Vermeer',
-        },
-        {
-          id: 'SK-C-216',
-          objectNumber: 'SK-C-216',
-          title: 'The Sampling Officials',
-          artist: 'Rembrandt van Rijn',
-          dating: '1662',
-          webImage: {
-            url: 'https://lh3.googleusercontent.com/gShVRyvLLbwVB8jeIPghCXgr96wxTHaM4zqfmxIWRsUpMhMn38PwuUU13o1mXQzLMt5HFqX761u8Tgo4L_JG1XLATvw=s0',
-            width: 2096,
-            height: 1638,
-          },
-          aspectRatio: 1.28,
-          principalMaker: 'Rembrandt van Rijn',
+          aspectRatio: 0.88,
+          principalMaker: 'Herman Doomer',
         },
       ],
     });

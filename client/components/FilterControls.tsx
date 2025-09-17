@@ -119,6 +119,14 @@ export const FilterControls: React.FC<FilterControlsProps> = ({
     onClear();
   };
 
+  // Check if there are any filters in the current form state
+  const hasCurrentFilters = Object.keys(filters).some(key => {
+    const value = filters[key as keyof FilterOptions];
+    if (key === 'topPieces') return value === true;
+    if (key === 'colors') return Array.isArray(value) && value.length > 0;
+    return value && value !== '' && value !== 'all';
+  });
+
   // Check if there are pending changes
   const hasPendingChanges = JSON.stringify(filters) !== JSON.stringify(activeFilters);
 
@@ -129,6 +137,9 @@ export const FilterControls: React.FC<FilterControlsProps> = ({
     if (key === 'colors') return Array.isArray(value) && value.length > 0;
     return value && value !== '' && value !== 'all';
   });
+
+  // Button should be enabled if there are any current filters OR active filters
+  const shouldEnableClearButton = hasCurrentFilters || hasActiveFilters;
 
   return (
     <motion.div
@@ -161,16 +172,19 @@ export const FilterControls: React.FC<FilterControlsProps> = ({
           )}
         </div>
         <div className="flex gap-3">
-          {(hasActiveFilters || hasPendingChanges) && (
-            <Button
-              onClick={clearAllFilters}
-              variant="outline"
-              size="sm"
-              className="border-cream text-cream hover:bg-cream hover:text-dark"
-            >
-              Clear All
-            </Button>
-          )}
+          <Button
+            onClick={clearAllFilters}
+            variant="outline"
+            size="sm"
+            disabled={!shouldEnableClearButton}
+            className={`border-2 transition-all duration-200 ${
+              shouldEnableClearButton
+                ? 'border-cream text-cream bg-cream/10 hover:bg-cream hover:text-dark'
+                : 'border-cream/30 text-cream/50 bg-cream/5 cursor-not-allowed'
+            }`}
+          >
+            Clear All
+          </Button>
           <Button
             onClick={onApply}
             disabled={loading}
