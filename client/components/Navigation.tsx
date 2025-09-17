@@ -17,11 +17,8 @@ export const Navigation: React.FC = () => {
   }, []);
 
   const navLinks = [
-    { path: '/work', label: 'Work' },
-    { path: '/news', label: 'News' },
     { path: '/about', label: 'About' },
-    { path: '/capabilities', label: 'Capabilities' },
-    { path: '/contact', label: 'Contact' },
+    { path: '/gallery', label: 'GALLERY' },
   ];
 
   return (
@@ -34,9 +31,11 @@ export const Navigation: React.FC = () => {
         {/* Logo */}
         <Link
           to="/"
-          className="font-title text-cream text-2xl md:text-3xl tracking-wider hover:text-red transition-colors duration-300"
+          className={`font-title text-2xl md:text-3xl tracking-wider transition-colors duration-300 ${
+            isScrolled ? 'text-cream hover:text-red' : 'text-red hover:text-cream'
+          }`}
         >
-          NARWHAL
+          MASONRY SCHOOL
         </Link>
 
         {/* Desktop Navigation */}

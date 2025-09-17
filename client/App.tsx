@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Navigation } from './components/Navigation';
 import Index from './pages/Index';
 import About from './pages/About';
+import Gallery from './pages/Gallery';
 import NotFound from './pages/NotFound';
 import './global.css';
 
@@ -30,7 +31,7 @@ function App() {
         <Route path="/work" element={<PlaceholderPage title="Our Work" />} />
         <Route path="/news" element={<PlaceholderPage title="Latest News" />} />
         <Route path="/about" element={<About />} />
-        <Route path="/capabilities" element={<PlaceholderPage title="Our Capabilities" />} />
+        <Route path="/gallery" element={<Gallery />} />
         <Route path="/contact" element={<PlaceholderPage title="Contact Us" />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
