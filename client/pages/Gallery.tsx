@@ -23,12 +23,15 @@ interface Artwork {
 }
 
 const Gallery: React.FC = () => {
-  const [artworks, setArtworks] = useState<Artwork[]>([]);
+  const [allArtworks, setAllArtworks] = useState<Artwork[]>([]); // All fetched artworks
+  const [displayedArtworks, setDisplayedArtworks] = useState<Artwork[]>([]); // Currently displayed artworks
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
   const [imagesLoaded, setImagesLoaded] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [allImagesLoaded, setAllImagesLoaded] = useState(false);
+  const [currentChunk, setCurrentChunk] = useState(0);
   const [filters, setFilters] = useState<FilterOptions>({});
   const [activeFilters, setActiveFilters] = useState<FilterOptions>({});
   const [masonrySettings] = useState({
@@ -46,6 +49,11 @@ const Gallery: React.FC = () => {
   const [isShuffling, setIsShuffling] = useState(false);
   const masonryGridRef = useRef<HTMLDivElement>(null);
   const masonryRef = useRef<Masonry | null>(null);
+  const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
+
+  // Performance settings
+  const CHUNK_SIZE = 15; // Load 15 items per chunk
+  const INITIAL_CHUNKS = 1; // Load 1 chunk initially
 
   // Fetch artworks from local API endpoint with filters
   const fetchArtworks = async (appliedFilters: FilterOptions = {}) => {
@@ -72,12 +80,20 @@ const Gallery: React.FC = () => {
       const data = await response.json();
 
       if (data.success && data.artworks && data.artworks.length > 0) {
-        setArtworks(data.artworks);
+        setAllArtworks(data.artworks);
+        // Load initial chunk immediately
+        const initialChunk = data.artworks.slice(0, CHUNK_SIZE * INITIAL_CHUNKS);
+        setDisplayedArtworks(initialChunk);
+        setCurrentChunk(INITIAL_CHUNKS - 1);
         setError(null);
+        console.log(`🎯 Initial load: ${initialChunk.length} artworks, ${data.artworks.length - initialChunk.length} remaining`);
       } else if (!data.success && data.artworks && data.artworks.length > 0) {
         // Use fallback data if API failed but we have backup
         console.warn('Using fallback artworks data');
-        setArtworks(data.artworks);
+        setAllArtworks(data.artworks);
+        const initialChunk = data.artworks.slice(0, CHUNK_SIZE * INITIAL_CHUNKS);
+        setDisplayedArtworks(initialChunk);
+        setCurrentChunk(INITIAL_CHUNKS - 1);
         setError(null);
       } else {
         throw new Error('Failed to load artworks');
@@ -104,6 +120,30 @@ const Gallery: React.FC = () => {
     fetchArtworks({});
   };
 
+  // Load more artworks (next chunk)
+  const loadMoreArtworks = () => {
+    if (loadingMore || currentChunk * CHUNK_SIZE >= allArtworks.length - CHUNK_SIZE) {
+      return; // Already loading or no more items
+    }
+
+    setLoadingMore(true);
+
+    setTimeout(() => {
+      const nextChunk = currentChunk + 1;
+      const startIndex = nextChunk * CHUNK_SIZE;
+      const endIndex = Math.min(startIndex + CHUNK_SIZE, allArtworks.length);
+      const newItems = allArtworks.slice(startIndex, endIndex);
+
+      if (newItems.length > 0) {
+        setDisplayedArtworks(prev => [...prev, ...newItems]);
+        setCurrentChunk(nextChunk);
+        console.log(`📦 Loaded chunk ${nextChunk}: ${newItems.length} more artworks (${endIndex}/${allArtworks.length} total)`);
+      }
+
+      setLoadingMore(false);
+    }, 100); // Small delay to prevent rapid firing
+  };
+
   useEffect(() => {
     fetchArtworks();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -116,9 +156,32 @@ const Gallery: React.FC = () => {
     return masonrySettings.columns === 'auto' ? '.masonry-sizer' : '.masonry-item';
   };
 
+  // Setup intersection observer for infinite scroll
+  useEffect(() => {
+    if (!loadMoreTriggerRef.current || allArtworks.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loadingMore) {
+          loadMoreArtworks();
+        }
+      },
+      {
+        threshold: 0.1,
+        rootMargin: '200px', // Start loading 200px before trigger is visible
+      }
+    );
+
+    observer.observe(loadMoreTriggerRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [allArtworks.length, loadingMore, currentChunk]);
+
   // Initialize Masonry.js with visual settings
   useLayoutEffect(() => {
-    if (!masonryGridRef.current || artworks.length === 0 || !allImagesLoaded) return;
+    if (!masonryGridRef.current || displayedArtworks.length === 0) return;
 
     const initializeMasonry = () => {
       if (!masonryGridRef.current) return;
@@ -160,16 +223,29 @@ const Gallery: React.FC = () => {
         masonryRef.current = null;
       }
     };
-  }, [artworks, allImagesLoaded, masonrySettings]);
+  }, [displayedArtworks, masonrySettings]);
+
+  // Update masonry layout when new items are added
+  useLayoutEffect(() => {
+    if (masonryRef.current && displayedArtworks.length > 0) {
+      setTimeout(() => {
+        if (masonryRef.current) {
+          masonryRef.current.reloadItems();
+          masonryRef.current.layout();
+          console.log('🔄 Masonry layout updated for', displayedArtworks.length, 'items');
+        }
+      }, 50);
+    }
+  }, [displayedArtworks.length]);
 
   // Preload images and track when all are loaded
   useEffect(() => {
-    if (artworks.length === 0) return;
+    if (displayedArtworks.length === 0) return;
 
     setAllImagesLoaded(false);
     const loadedImages = new Set<string>();
 
-    const loadPromises = artworks.map((artwork) => {
+    const loadPromises = displayedArtworks.map((artwork) => {
       return new Promise<void>((resolve) => {
         const img = new Image();
         img.src = artwork.webImage.url;
@@ -206,7 +282,7 @@ const Gallery: React.FC = () => {
         }
       }, 100);
     });
-  }, [artworks]);
+  }, [displayedArtworks]);
 
   // Handle window resize
   useEffect(() => {
@@ -237,7 +313,7 @@ const Gallery: React.FC = () => {
     );
   }
 
-  if (error || (artworks.length === 0 && !loading)) {
+  if (error || (displayedArtworks.length === 0 && !loading)) {
     return (
       <div className="min-h-screen bg-cream pt-[100px] pb-20">
         <div className="px-[0.7vw] mb-8">
@@ -320,7 +396,7 @@ const Gallery: React.FC = () => {
             {/* Sizer element for Masonry */}
             {masonrySettings.columns === 'auto' && <div className="masonry-sizer"></div>}
 
-            {artworks.map((artwork) => {
+            {displayedArtworks.map((artwork) => {
               return (
                 <div
                   key={`masonry-${artwork.id}`}
@@ -408,6 +484,25 @@ const Gallery: React.FC = () => {
                 </div>
               );
             })}
+
+            {/* Load more trigger */}
+            {currentChunk * CHUNK_SIZE < allArtworks.length - CHUNK_SIZE && (
+              <div
+                ref={loadMoreTriggerRef}
+                className="col-span-full flex justify-center py-8"
+              >
+                {loadingMore ? (
+                  <div className="flex items-center gap-3 text-dark/70">
+                    <div className="w-6 h-6 border-2 border-dark/30 border-t-dark rounded-full animate-spin"></div>
+                    <span className="font-montreal text-sm uppercase tracking-wider">Loading more artworks...</span>
+                  </div>
+                ) : (
+                  <div className="text-dark/50 font-montreal text-sm uppercase tracking-wider">
+                    Scroll for more artworks ({displayedArtworks.length} of {allArtworks.length})
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
