@@ -476,6 +476,61 @@ export default function Index() {
       </section>
 
 
+      {/* Testimonials Carousel Section */}
+      <section className="py-20 bg-dark border-t-2 border-cream/20">
+        <div className="px-[0.7vw]">
+          <div className="max-w-6xl mx-auto">
+            <h2 className="font-title text-f-60 md:text-f-80 text-cream mb-12 text-center">
+              What They Say
+            </h2>
+
+            <Carousel
+              opts={{
+                align: "start",
+                loop: true,
+              }}
+              className="w-full"
+            >
+              <CarouselContent>
+                {testimonials.map((testimonial) => (
+                  <CarouselItem key={testimonial.id} className="md:basis-1/2 lg:basis-1/3">
+                    <div className="p-4">
+                      <div className="bg-cream rounded-lg p-8 h-full flex flex-col justify-between min-h-[300px]">
+                        <div>
+                          <svg
+                            className="w-10 h-10 text-red mb-4"
+                            fill="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
+                          </svg>
+                          <p className="font-copy text-base text-dark mb-6 leading-relaxed">
+                            {testimonial.quote}
+                          </p>
+                        </div>
+                        <div className="border-t-2 border-dark/10 pt-4">
+                          <p className="font-copy font-semibold text-dark">
+                            {testimonial.author}
+                          </p>
+                          <p className="font-copy text-sm text-dark/60">
+                            {testimonial.role}
+                          </p>
+                          <p className="font-copy text-xs uppercase tracking-wider text-red mt-1">
+                            {testimonial.company}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="hidden md:flex bg-cream text-dark hover:bg-red hover:text-cream border-cream" />
+              <CarouselNext className="hidden md:flex bg-cream text-dark hover:bg-red hover:text-cream border-cream" />
+            </Carousel>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="py-8 bg-dark">
         <div className="px-[0.7vw] text-center">
