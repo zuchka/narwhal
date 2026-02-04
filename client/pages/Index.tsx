@@ -120,6 +120,42 @@ const teamMembers = [
   { name: "Emma Davis", role: "New Business", email: "emma@narwhal.studio" },
 ];
 
+// Testimonials
+const testimonials = [
+  {
+    id: 1,
+    quote:
+      "Narwhal Studio transformed our brand identity with a boldness we didn't know we needed. Their creative vision is unmatched.",
+    author: "Jessica Martinez",
+    role: "CMO, Ocean Spray",
+    company: "Ocean Spray",
+  },
+  {
+    id: 2,
+    quote:
+      "Working with Narwhal was like having a creative partner who truly understood our vision and elevated it beyond our expectations.",
+    author: "Marcus Thompson",
+    role: "Founder, TechWave",
+    company: "TechWave Summit",
+  },
+  {
+    id: 3,
+    quote:
+      "They don't just deliver projects—they create movements. Our campaign exceeded all KPIs thanks to their innovative approach.",
+    author: "Olivia Chen",
+    role: "Creative Lead, StartUp Inc",
+    company: "StartUp Launch",
+  },
+  {
+    id: 4,
+    quote:
+      "Narwhal Studio brought our brand story to life in ways we never imagined. True masters of their craft.",
+    author: "David Park",
+    role: "VP Marketing, Brand Strategy Co.",
+    company: "Brand Strategy Co.",
+  },
+];
+
 export default function Index() {
   const marqueeRef = useRef<HTMLDivElement>(null);
 
