@@ -475,7 +475,6 @@ export default function Index() {
         </div>
       </section>
 
-
       {/* Testimonials Carousel Section */}
       <section className="py-20 bg-dark border-t-2 border-cream/20">
         <div className="px-[0.7vw]">
@@ -493,7 +492,10 @@ export default function Index() {
             >
               <CarouselContent>
                 {testimonials.map((testimonial) => (
-                  <CarouselItem key={testimonial.id} className="md:basis-1/2 lg:basis-1/3">
+                  <CarouselItem
+                    key={testimonial.id}
+                    className="md:basis-1/2 lg:basis-1/3"
+                  >
                     <div className="p-4">
                       <div className="bg-cream rounded-lg p-8 h-full flex flex-col justify-between min-h-[300px]">
                         <div>
