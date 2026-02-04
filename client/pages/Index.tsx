@@ -8,6 +8,13 @@ import {
   Linkedin,
 } from "lucide-react";
 import { ContactCircle } from "../components/ContactCircle";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 // Work item data
 const workItems = [
